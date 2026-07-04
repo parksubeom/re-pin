@@ -10,7 +10,8 @@ type Props = { shareToken: string }
 export function ClientReviewPage({ shareToken }: Props) {
   const demoProject = {
     title: `시안 검토 (${shareToken})`,
-    draftImageUrl: 'https://placehold.co/1200x800/EDECE6/A5A49C?text=%EC%8B%9C%EC%95%88+%EB%AF%B8%EB%A6%AC%EB%B3%B4%EA%B8%B0',
+    draftImageUrl:
+      'https://placehold.co/1200x800/EDECE6/A5A49C?text=%EC%8B%9C%EC%95%88+%EB%AF%B8%EB%A6%AC%EB%B3%B4%EA%B8%B0',
     policy: { includedRounds: 2 },
   }
 

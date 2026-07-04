@@ -27,6 +27,7 @@ projects  (id, title, client_name, draft_image_path, share_token UNIQUE, include
 rounds    (id, project_id FK, no, submitted_at, UNIQUE(project_id, no))
 pins      (id, project_id FK, round_id FK NULL, x, y, comment, author_name, status, created_at)
 ```
+
 - 이미지: Supabase Storage 버킷 `drafts/`, DB엔 경로만. 공개 읽기 or 서명 URL.
 - RLS: `share_token` 기반 정책 + 제작자 소유(auth) 정책. M1에선 shareToken 경로부터.
 
@@ -36,12 +37,15 @@ FSD 매핑 원칙(`rules/20·40`, `rules/next/state-and-data`): 서버 데이터
 변경은 **Server Action**, 리소스 쿼리는 `entities/*/api`, 액션은 `features/*/api`.
 
 ### 단계 0 — Supabase 배선 (기반)
+
 - Supabase 프로젝트 생성, `.env.local`(URL·anon key·service key), `src/shared/api/supabase.ts` 클라이언트(server/client 분리).
 - 스키마 SQL(위 3테이블 + RLS + Storage 버킷) → `supabase/migrations/`.
 - 스킬: (수동 설정) → `create-slice`(shared/api). 검증: 로컬에서 클라이언트로 연결 ping.
 
 ### 단계 1 — tracer bullet: shareToken 조회 영속화 ⭐
+
 가장 얇게 끝-끝 도는 한 조각. 데모 하드코딩을 실제 조회로 교체.
+
 - `entities/project/api` — `getProjectByShareToken(token)` (RSC용 서버 조회, 핀·회차 포함).
 - seed 로 데모 프로젝트 1건 삽입 → `/r/demo` 가 DB에서 읽어 렌더(핀 0개라도).
 - `ClientReviewPage` 를 async 서버 컴포넌트로, 조회 결과를 `ReviewCanvas`에 props로.
@@ -49,18 +53,21 @@ FSD 매핑 원칙(`rules/20·40`, `rules/next/state-and-data`): 서버 데이터
 - **검증**: `/r/demo` 새로고침해도 시안·정책이 DB에서 온다. 없는 토큰은 404(notFound).
 
 ### 단계 2 — 핀 쓰기 영속화
+
 - `features/drop-pin/api` — `addPin` **Server Action**('use server'), 삽입 후 `revalidatePath`.
 - `PinLayer` 의 로컬 onAdd → Server Action 호출로 교체(낙관적 갱신은 선택).
 - 불변식 1(draft만) 서버에서 방어.
 - 스킬: `create-slice`(features/drop-pin/api) → `write-test`(불변식). **검증**: 핀 찍고 새로고침 → 남아 있음.
 
 ### 단계 3 — 회차 제출 트랜잭션
+
 - `features/submit-round/api` — `submitRound` Server Action: draft핀 묶음 → 새 round 생성 +
   핀 status/round_id 갱신을 **단일 트랜잭션(RPC)**. 불변식 2·3 서버 강제.
 - `SubmitRoundBar` onSubmit → Server Action.
 - 스킬: `create-slice` → `write-test`(회차 단조성·잔여 계산). **검증**: 제출 후 새로고침 → 회차·잔여 유지.
 
 ### 단계 4 — 시안 이미지 업로드 (제작자)
+
 - `features/create-project/api` — 이미지 Storage 업로드 + projects insert + shareToken 발급 Server Action.
 - 대시보드에 최소 업로드 폼(파일 선택 → 링크 발급 → 복사). `DashboardPage` 스텁을 실동작으로.
 - 스킬: `create-slice`(features/create-project) → `create-component`(업로드 폼) → `write-test`.

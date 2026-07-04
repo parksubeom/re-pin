@@ -1,6 +1,17 @@
 node_modules/
 .next/
 out/
+build/
 *.log
+
+# testing / coverage
+coverage/
+playwright-report/
+test-results/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# env — commit only the example
 .env*
 !.env.example

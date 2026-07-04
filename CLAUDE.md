@@ -1,6 +1,7 @@
 # CLAUDE.md
 
 <!-- bumpist-code:rules -->
+
 @.claude/rules/00-core.md
 @.claude/rules/05-working-with-claude.md
 @.claude/rules/10-guardrails.md

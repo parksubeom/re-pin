@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+
 import type { Pin } from '@/entities/pin'
 import type { Round, RoundPolicy } from '@/entities/round'
 import { PinLayer } from '@/features/drop-pin'
@@ -13,7 +14,7 @@ type Props = {
 
 /**
  * 시안 + 핀 레이어 + 회차 제출 바를 조립한 리뷰 캔버스.
- * MVP 단계: 상태는 메모리에만 (API 연결 전). persist는 features/*/api 로 옮긴다.
+ * MVP 단계: 상태는 메모리에만 (API 연결 전). persist는 features 슬라이스의 api 세그먼트로 옮긴다.
  */
 export function ReviewCanvas({ draftImageUrl, policy }: Props) {
   const [pins, setPins] = useState<Pin[]>([])
@@ -28,7 +29,9 @@ export function ReviewCanvas({ draftImageUrl, policy }: Props) {
       ...rounds,
       { no, submittedAt: new Date().toISOString(), pinIds: draftPins.map((p) => p.id) },
     ])
-    setPins(pins.map((p) => (p.status === 'draft' ? { ...p, status: 'submitted', roundNo: no } : p)))
+    setPins(
+      pins.map((p) => (p.status === 'draft' ? { ...p, status: 'submitted', roundNo: no } : p)),
+    )
   }
 
   return (

@@ -1,5 +1,5 @@
-import type { Round, RoundPolicy } from '@/entities/round'
 import type { Pin } from '@/entities/pin'
+import type { Round, RoundPolicy } from '@/entities/round'
 
 export type Project = {
   id: string

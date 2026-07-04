@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type MouseEvent } from 'react'
+
 import type { Pin } from '@/entities/pin'
 import { createId } from '@/shared/lib/id'
 
@@ -68,7 +69,9 @@ export function PinLayer({ pins, onAdd, disabled = false }: Props) {
             boxShadow: '0 4px 10px rgba(212,83,126,.4)',
           }}
         >
-          <span style={{ transform: 'rotate(45deg)', color: '#fff', fontSize: 12, fontWeight: 800 }}>
+          <span
+            style={{ transform: 'rotate(45deg)', color: '#fff', fontSize: 12, fontWeight: 800 }}
+          >
             {i + 1}
           </span>
         </div>

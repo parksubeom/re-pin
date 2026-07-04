@@ -1,4 +1,4 @@
-import { ClientReviewPage } from '@/pages/client-review'
+import { ClientReviewPage } from '@/pageViews/client-review'
 
 type Props = { params: Promise<{ shareToken: string }> }
 
