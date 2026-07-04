@@ -1,0 +1,216 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "sujungpin API",
+    "version": "0.1.0",
+    "description": "Client-facing HTTP surface for the no-login review flow. Backed by Next Route Handlers under app/api/**, which own the server-only Supabase client and enforce shareToken scoping + domain invariants. The openapi-fetch client sets baseUrl='/api', so paths here are written WITHOUT the /api prefix."
+  },
+  "paths": {
+    "/projects/{shareToken}": {
+      "get": {
+        "operationId": "getProjectByShareToken",
+        "summary": "Fetch a project (with pins, rounds, computed remaining) by its share token.",
+        "parameters": [{ "$ref": "#/components/parameters/ShareToken" }],
+        "responses": {
+          "200": {
+            "description": "The project.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Project" } }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/projects/{shareToken}/pins": {
+      "post": {
+        "operationId": "addPin",
+        "summary": "Add a draft pin to the project.",
+        "parameters": [{ "$ref": "#/components/parameters/ShareToken" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PinCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created draft pin.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Pin" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/projects/{shareToken}/pins/{pinId}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/ShareToken" },
+        { "$ref": "#/components/parameters/PinId" }
+      ],
+      "patch": {
+        "operationId": "updateDraftPin",
+        "summary": "Edit a draft pin (only while draft).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PinUpdate" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated pin.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Pin" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteDraftPin",
+        "summary": "Delete a draft pin (only while draft).",
+        "responses": {
+          "204": { "description": "Deleted." },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/projects/{shareToken}/rounds": {
+      "post": {
+        "operationId": "submitRound",
+        "summary": "Submit the current draft pins as a new round.",
+        "parameters": [{ "$ref": "#/components/parameters/ShareToken" }],
+        "responses": {
+          "201": {
+            "description": "The created round.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Round" } }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ShareToken": {
+        "name": "shareToken",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      },
+      "PinId": {
+        "name": "pinId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid input.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "NotFound": {
+        "description": "Unknown share token or pin.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "Conflict": {
+        "description": "Operation not allowed in the current state (e.g. no remaining rounds, pin not draft).",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": { "type": "string" },
+          "code": { "type": "string" }
+        }
+      },
+      "PinStatus": {
+        "type": "string",
+        "enum": ["draft", "submitted", "resolved"]
+      },
+      "Pin": {
+        "type": "object",
+        "required": ["id", "x", "y", "comment", "status", "roundNo", "createdAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "x": { "type": "number", "minimum": 0, "maximum": 1 },
+          "y": { "type": "number", "minimum": 0, "maximum": 1 },
+          "comment": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "authorName": { "type": ["string", "null"] },
+          "status": { "$ref": "#/components/schemas/PinStatus" },
+          "roundNo": { "type": ["integer", "null"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PinCreate": {
+        "type": "object",
+        "required": ["x", "y", "comment"],
+        "properties": {
+          "x": { "type": "number", "minimum": 0, "maximum": 1 },
+          "y": { "type": "number", "minimum": 0, "maximum": 1 },
+          "comment": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "authorName": { "type": ["string", "null"], "maxLength": 100 }
+        }
+      },
+      "PinUpdate": {
+        "type": "object",
+        "properties": {
+          "x": { "type": "number", "minimum": 0, "maximum": 1 },
+          "y": { "type": "number", "minimum": 0, "maximum": 1 },
+          "comment": { "type": "string", "minLength": 1, "maxLength": 2000 }
+        }
+      },
+      "Round": {
+        "type": "object",
+        "required": ["no", "submittedAt", "pinIds"],
+        "properties": {
+          "no": { "type": "integer", "minimum": 1 },
+          "submittedAt": { "type": "string", "format": "date-time" },
+          "pinIds": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "draftImageUrl",
+          "shareToken",
+          "includedRounds",
+          "usedRounds",
+          "remaining",
+          "overflow",
+          "pins",
+          "rounds",
+          "createdAt"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "draftImageUrl": { "type": ["string", "null"] },
+          "shareToken": { "type": "string" },
+          "includedRounds": { "type": "integer", "minimum": 1 },
+          "usedRounds": { "type": "integer", "minimum": 0 },
+          "remaining": { "type": "integer", "minimum": 0 },
+          "overflow": { "type": "integer", "minimum": 0 },
+          "pins": { "type": "array", "items": { "$ref": "#/components/schemas/Pin" } },
+          "rounds": { "type": "array", "items": { "$ref": "#/components/schemas/Round" } },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
