@@ -1,0 +1,21 @@
+:root {
+  --paper: #fbfbf9;
+  --card: #ffffff;
+  --ink: #1a1a18;
+  --txt-2: #63625d;
+  --border: #e7e6e1;
+  --pin: #d4537e;
+  --pin-deep: #99244b;
+  --pin-bg: #fbeaf0;
+  --ok: #1d9e75;
+  --ok-bg: #e1f5ee;
+  --ok-deep: #085041;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.6;
+}
+button { font-family: inherit; cursor: pointer; }
