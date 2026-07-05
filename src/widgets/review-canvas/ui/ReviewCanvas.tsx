@@ -1,28 +1,14 @@
 'use client'
 
-import type { Pin } from '@/entities/pin'
+import { toPin } from '@/entities/pin'
 import { useProjectQuery } from '@/entities/project'
 import { PinLayer, useAddPin } from '@/features/drop-pin'
 import { SubmitRoundBar, useSubmitRound } from '@/features/submit-round'
-import type { PinDTO, ProjectDTO } from '@/shared/api/types'
+import type { ProjectDTO } from '@/shared/api/types'
 
 type Props = {
   project: ProjectDTO
   draftImageUrl: string
-}
-
-// PinDTO (wire) → domain Pin (what PinLayer renders). authorName null → ''.
-function toPin(dto: PinDTO): Pin {
-  return {
-    id: dto.id,
-    x: dto.x,
-    y: dto.y,
-    comment: dto.comment,
-    authorName: dto.authorName ?? '',
-    createdAt: dto.createdAt,
-    status: dto.status,
-    roundNo: dto.roundNo,
-  }
 }
 
 /**
@@ -52,7 +38,7 @@ export function ReviewCanvas({ project: initial, draftImageUrl }: Props) {
             background: 'var(--card)',
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- signed URL / placeholder, not a static asset */}
+          {/* signed URL / placeholder, not a static asset — intentional <img> */}
           <img
             src={draftImageUrl}
             alt="검토할 시안"

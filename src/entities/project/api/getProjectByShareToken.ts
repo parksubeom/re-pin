@@ -3,6 +3,8 @@ import 'server-only'
 import { supabaseServer } from '@/shared/api/supabase.server'
 import type { PinDTO, ProjectDTO, RoundDTO } from '@/shared/api/types'
 
+import { computeRoundStats } from '../lib/computeRoundStats'
+
 const SIGNED_URL_TTL_SECONDS = 60 * 60 // 1h; private bucket → server-minted signed URL
 
 /**
@@ -66,9 +68,10 @@ export async function getProjectByShareToken(shareToken: string): Promise<Projec
     draftImageUrl = signed?.signedUrl ?? null
   }
 
-  const usedRounds = rounds.length
-  const remaining = Math.max(0, project.included_rounds - usedRounds)
-  const overflow = Math.max(0, usedRounds - project.included_rounds)
+  const { usedRounds, remaining, overflow } = computeRoundStats(
+    project.included_rounds,
+    rounds.length,
+  )
 
   return {
     id: project.id,

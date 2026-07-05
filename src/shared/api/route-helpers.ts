@@ -2,6 +2,7 @@ import 'server-only'
 
 import { NextResponse } from 'next/server'
 
+import { mapSubmitRoundError } from './submitRoundError'
 import { supabaseServer } from './supabase.server'
 
 import type { ApiError } from './types'
@@ -29,14 +30,6 @@ export async function projectIdForToken(shareToken: string): Promise<string | nu
 
 /** Maps the submit_round RPC's SQLSTATEs to HTTP responses (rules/next/error-handling). */
 export function submitRoundErrorResponse(code: string | undefined, message: string) {
-  switch (code) {
-    case 'P0002':
-      return apiError(404, 'unknown share token', code)
-    case 'P0003':
-      return apiError(409, 'no draft pins to submit', code)
-    case 'P0004':
-      return apiError(409, 'no remaining rounds', code)
-    default:
-      return apiError(500, message || 'submit failed', code)
-  }
+  const mapped = mapSubmitRoundError(code, message)
+  return apiError(mapped.status, mapped.message, mapped.code)
 }
