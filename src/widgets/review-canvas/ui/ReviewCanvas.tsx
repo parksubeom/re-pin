@@ -2,7 +2,7 @@
 
 import { toPin } from '@/entities/pin'
 import { useProjectQuery } from '@/entities/project'
-import { PinLayer, useAddPin } from '@/features/drop-pin'
+import { PinLayer, useAddPin, useUpdateDraftPin, useDeleteDraftPin } from '@/features/drop-pin'
 import { SubmitRoundBar, useSubmitRound } from '@/features/submit-round'
 import type { ProjectDTO } from '@/shared/api/types'
 
@@ -24,7 +24,10 @@ export function ReviewCanvas({ project: initial, draftImageUrl }: Props) {
   const draftCount = pins.filter((p) => p.status === 'draft').length
 
   const addPin = useAddPin(shareToken)
+  const updatePin = useUpdateDraftPin(shareToken)
+  const deletePin = useDeleteDraftPin(shareToken)
   const submitRound = useSubmitRound(shareToken)
+  const mutating = addPin.isPending || updatePin.isPending || deletePin.isPending
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
@@ -47,7 +50,7 @@ export function ReviewCanvas({ project: initial, draftImageUrl }: Props) {
           />
           <PinLayer
             pins={pins}
-            disabled={addPin.isPending}
+            disabled={mutating}
             onAdd={(pin) =>
               addPin.mutate({
                 x: pin.x,
@@ -56,6 +59,8 @@ export function ReviewCanvas({ project: initial, draftImageUrl }: Props) {
                 authorName: pin.authorName || null,
               })
             }
+            onUpdate={(pinId, comment) => updatePin.mutate({ pinId, patch: { comment } })}
+            onDelete={(pinId) => deletePin.mutate(pinId)}
           />
         </div>
         <p style={{ marginTop: 12, fontSize: 13, color: 'var(--txt-2)', textAlign: 'center' }}>
