@@ -1,20 +1,16 @@
+import type { ProjectDTO } from '@/shared/api/types'
 import { ReviewCanvas } from '@/widgets/review-canvas'
 
-type Props = { shareToken: string }
+type Props = { project: ProjectDTO }
+
+const PLACEHOLDER_IMAGE =
+  'https://placehold.co/1200x800/EDECE6/A5A49C?text=%EC%8B%9C%EC%95%88+%EC%97%86%EC%9D%8C'
 
 /**
  * 클라이언트가 링크로 진입하는 리뷰 화면. 로그인 없음.
- * MVP 단계: shareToken → 프로젝트 조회는 API 연결 시 구현.
- * 지금은 데모 시안으로 핵심 인터랙션을 확인한다.
+ * 서버(RSC)에서 조회한 프로젝트를 받아 렌더한다. 상태 영속화는 ReviewCanvas의 API 훅이 담당.
  */
-export function ClientReviewPage({ shareToken }: Props) {
-  const demoProject = {
-    title: `시안 검토 (${shareToken})`,
-    draftImageUrl:
-      'https://placehold.co/1200x800/EDECE6/A5A49C?text=%EC%8B%9C%EC%95%88+%EB%AF%B8%EB%A6%AC%EB%B3%B4%EA%B8%B0',
-    policy: { includedRounds: 2 },
-  }
-
+export function ClientReviewPage({ project }: Props) {
   return (
     <main>
       <header
@@ -26,9 +22,9 @@ export function ClientReviewPage({ shareToken }: Props) {
           fontSize: 15,
         }}
       >
-        📌 {demoProject.title}
+        📌 {project.title}
       </header>
-      <ReviewCanvas draftImageUrl={demoProject.draftImageUrl} policy={demoProject.policy} />
+      <ReviewCanvas project={project} draftImageUrl={project.draftImageUrl ?? PLACEHOLDER_IMAGE} />
     </main>
   )
 }

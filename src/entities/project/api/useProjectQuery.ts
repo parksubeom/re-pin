@@ -3,14 +3,16 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { apiClient } from '@/shared/api/client'
+import type { ProjectDTO } from '@/shared/api/types'
 
 import { projectQueryKey } from '../model/queryKeys'
 
 /**
  * Client-side project read via the typed /api client. Use for interactive refetch after
- * mutations; the first render is fed by the RSC-direct read as initialData (rules/next/state-and-data).
+ * mutations; pass the RSC-fetched project as initialData to avoid a refetch on first render
+ * (rules/next/state-and-data).
  */
-export function useProjectQuery(shareToken: string) {
+export function useProjectQuery(shareToken: string, initialData?: ProjectDTO) {
   return useQuery({
     queryKey: projectQueryKey(shareToken),
     queryFn: async () => {
@@ -20,5 +22,6 @@ export function useProjectQuery(shareToken: string) {
       if (error) throw error
       return data
     },
+    initialData,
   })
 }

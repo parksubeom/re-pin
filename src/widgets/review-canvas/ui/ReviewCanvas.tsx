@@ -1,38 +1,44 @@
 'use client'
 
-import { useState } from 'react'
-
 import type { Pin } from '@/entities/pin'
-import type { Round, RoundPolicy } from '@/entities/round'
-import { PinLayer } from '@/features/drop-pin'
-import { SubmitRoundBar } from '@/features/submit-round'
+import { useProjectQuery } from '@/entities/project'
+import { PinLayer, useAddPin } from '@/features/drop-pin'
+import { SubmitRoundBar, useSubmitRound } from '@/features/submit-round'
+import type { PinDTO, ProjectDTO } from '@/shared/api/types'
 
 type Props = {
+  project: ProjectDTO
   draftImageUrl: string
-  policy: RoundPolicy
+}
+
+// PinDTO (wire) → domain Pin (what PinLayer renders). authorName null → ''.
+function toPin(dto: PinDTO): Pin {
+  return {
+    id: dto.id,
+    x: dto.x,
+    y: dto.y,
+    comment: dto.comment,
+    authorName: dto.authorName ?? '',
+    createdAt: dto.createdAt,
+    status: dto.status,
+    roundNo: dto.roundNo,
+  }
 }
 
 /**
- * 시안 + 핀 레이어 + 회차 제출 바를 조립한 리뷰 캔버스.
- * MVP 단계: 상태는 메모리에만 (API 연결 전). persist는 features 슬라이스의 api 세그먼트로 옮긴다.
+ * 시안 + 핀 레이어 + 회차 제출 바. 서버(RSC) 데이터로 초기화하고(initialData), 이후엔 React Query로
+ * 최신을 유지한다. 핀 추가·회차 제출은 API 훅으로 영속화된다(새로고침해도 남음).
  */
-export function ReviewCanvas({ draftImageUrl, policy }: Props) {
-  const [pins, setPins] = useState<Pin[]>([])
-  const [rounds, setRounds] = useState<Round[]>([])
+export function ReviewCanvas({ project: initial, draftImageUrl }: Props) {
+  const { data: project } = useProjectQuery(initial.shareToken, initial)
+  const shareToken = initial.shareToken
 
-  const draftPins = pins.filter((p) => p.status === 'draft')
+  const pins = (project?.pins ?? initial.pins).map(toPin)
+  const usedRounds = project?.usedRounds ?? initial.usedRounds
+  const draftCount = pins.filter((p) => p.status === 'draft').length
 
-  function submitRound() {
-    if (draftPins.length === 0) return
-    const no = rounds.length + 1
-    setRounds([
-      ...rounds,
-      { no, submittedAt: new Date().toISOString(), pinIds: draftPins.map((p) => p.id) },
-    ])
-    setPins(
-      pins.map((p) => (p.status === 'draft' ? { ...p, status: 'submitted', roundNo: no } : p)),
-    )
-  }
+  const addPin = useAddPin(shareToken)
+  const submitRound = useSubmitRound(shareToken)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
@@ -46,23 +52,37 @@ export function ReviewCanvas({ draftImageUrl, policy }: Props) {
             background: 'var(--card)',
           }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- signed URL / placeholder, not a static asset */}
           <img
             src={draftImageUrl}
             alt="검토할 시안"
             style={{ display: 'block', width: '100%', userSelect: 'none' }}
             draggable={false}
           />
-          <PinLayer pins={pins} onAdd={(pin) => setPins([...pins, pin])} />
+          <PinLayer
+            pins={pins}
+            disabled={addPin.isPending}
+            onAdd={(pin) =>
+              addPin.mutate({
+                x: pin.x,
+                y: pin.y,
+                comment: pin.comment,
+                authorName: pin.authorName || null,
+              })
+            }
+          />
         </div>
         <p style={{ marginTop: 12, fontSize: 13, color: 'var(--txt-2)', textAlign: 'center' }}>
           고치고 싶은 곳을 손가락(또는 마우스)으로 콕 찍어 주세요
         </p>
       </div>
       <SubmitRoundBar
-        draftCount={draftPins.length}
-        usedRounds={rounds.length}
-        policy={policy}
-        onSubmit={submitRound}
+        draftCount={draftCount}
+        usedRounds={usedRounds}
+        policy={{ includedRounds: initial.includedRounds }}
+        onSubmit={() => {
+          if (draftCount > 0) submitRound.mutate()
+        }}
       />
     </div>
   )
