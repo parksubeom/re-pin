@@ -29,7 +29,11 @@ export async function projectIdForToken(shareToken: string): Promise<string | nu
 }
 
 /** Maps the submit_round RPC's SQLSTATEs to HTTP responses (rules/next/error-handling). */
-export function submitRoundErrorResponse(code: string | undefined, message: string) {
-  const mapped = mapSubmitRoundError(code, message)
+export function submitRoundErrorResponse(code: string | undefined, rawMessage: string) {
+  const mapped = mapSubmitRoundError(code)
+  if (mapped.status === 500) {
+    // 원문은 서버 로그로만 — 익명 응답엔 일반 메시지.
+    console.error('[rounds POST] submit_round failed:', code, rawMessage)
+  }
   return apiError(mapped.status, mapped.message, mapped.code)
 }

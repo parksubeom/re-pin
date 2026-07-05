@@ -59,7 +59,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
     .select('id, x, y, comment, author_name, status, round_no, created_at')
     .maybeSingle()
 
-  if (error) return apiError(409, error.message, error.code) // trigger check_violation etc.
+  if (error) {
+    console.error('[pins PATCH] update failed:', error.code, error.message)
+    return apiError(409, 'pin update rejected', error.code) // trigger check_violation etc.
+  }
   if (!data) {
     // No row updated: either the pin doesn't exist here (404) or it's not draft (409).
     return (await pinExistsInProject(projectId, pinId))
@@ -95,7 +98,10 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     .select('id')
     .maybeSingle()
 
-  if (error) return apiError(409, error.message, error.code)
+  if (error) {
+    console.error('[pins DELETE] delete failed:', error.code, error.message)
+    return apiError(409, 'pin delete rejected', error.code)
+  }
   if (!data) {
     return (await pinExistsInProject(projectId, pinId))
       ? apiError(409, 'pin is not deletable (not a draft)')
